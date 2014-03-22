@@ -121,6 +121,7 @@ module Control.Parallel.Strategies (
 #if __GLASGOW_HASKELL__ >= 702
        , runEvalIO         -- :: Eval a -> IO a
 #endif
+       , parEval           -- :: Eval a -> Eval a
        ,
 
     -- * API History
@@ -241,6 +242,13 @@ instance Monad Eval where
 
 #endif
 
+-- | 'parEval' sparks the evaluation of its argument (for evaluation in
+-- parallel).
+--
+-- > parEval x = rpar (runEval x)
+--
+parEval :: Eval a -> Eval a
+parEval x = rpar (runEval x)
 
 instance Functor Eval where
   fmap = liftM
