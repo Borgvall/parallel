@@ -1,24 +1,25 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Control.Parallel.SeqStrategies
 -- Copyright   :  (c) The University of Glasgow 2001-2009
 -- License     :  BSD-style (see the file libraries/base/LICENSE)
--- 
+--
 -- Maintainer  :  libraries@haskell.org
 -- Stability   :  experimental
 -- Portability :  portable
--- 
+--
 -- Sequential strategies provide ways to compositionally specify
 -- the degree of evaluation of a data type between the extremes of
 -- no evaluation and full evaluation.
 -- Sequential strategies may be viewed as complimentary to the parallel
 -- ones (see module "Control.Parallel.Strategies").
--- 
+--
 
 module Control.Seq
-       ( 
+       (
          -- * The sequential strategy type
          Strategy
 
@@ -30,7 +31,7 @@ module Control.Seq
        , r0               -- :: Strategy a
        , rseq
        , rdeepseq         -- :: NFData a => Strategy a
-         
+
          -- * Sequential strategies for lists
        , seqList          -- :: Strategy a -> Strategy [a]
        , seqListN         -- :: Int -> Strategy a -> Strategy [a]
@@ -57,12 +58,14 @@ module Control.Seq
        , seqTuple9
        ) where
 
-import Prelude
 import Control.DeepSeq (NFData, deepseq)
+#if MIN_VERSION_base(4,8,0)
+import Data.Foldable (toList)
+#else
 import Data.Foldable (Foldable, toList)
+#endif
 import Data.Map (Map)
 import qualified Data.Map (toList)
-import Data.Ix (Ix)
 import Data.Array (Array)
 import qualified Data.Array (bounds, elems)
 
@@ -80,7 +83,7 @@ type Strategy a = a -> ()
 using :: a -> Strategy a -> a
 x `using` strat = strat x `seq` x
 
--- | Evaluate a value using the given strategy. 
+-- | Evaluate a value using the given strategy.
 -- This is simply 'using' with arguments reversed.
 withStrategy :: Strategy a -> a -> a
 withStrategy = flip using
@@ -142,11 +145,11 @@ seqFoldable strat = seqList strat . toList
 
 -- | Evaluate the elements of an array according to the given strategy.
 -- Evaluation of the array bounds may be triggered as a side effect.
-seqArray :: Ix i => Strategy a -> Strategy (Array i a)
+seqArray :: Strategy a -> Strategy (Array i a)
 seqArray strat = seqList strat . Data.Array.elems
 
 -- | Evaluate the bounds of an array according to the given strategy.
-seqArrayBounds :: Ix i => Strategy i -> Strategy (Array i a)
+seqArrayBounds :: Strategy i -> Strategy (Array i a)
 seqArrayBounds strat = seqTuple2 strat strat . Data.Array.bounds
 
 -- | Evaluate the keys and values of a map according to the given strategies.
